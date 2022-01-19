@@ -5,13 +5,33 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
 
+const String coinExchangeURL =
+    'https://rest.coinapi.io/v1/exchangerate/BTC/USD?apikey=';
+const String apiKey = '1C349635-A53A-4B2C-9A8A-0CF273FDE49C';
+
 class PriceScreen extends StatefulWidget {
   @override
   _PriceScreenState createState() => _PriceScreenState();
 }
 
 class _PriceScreenState extends State<PriceScreen> {
+  // CoinData btcCoinData = CoinData(crypto: 'BTC', currency: 'USD');
+  CoinModel coinModel = CoinModel();
+  double btcPriceUSD = 0.0;
+  double btcPrice = 0.0;
+
   String selectedCurrency = 'USD';
+
+  void updateUI(dynamic coinData) {
+    setState(() {
+      if (coinData == null) {
+        btcPriceUSD = -666.0;
+      }
+      btcPriceUSD = coinData['rate'];
+      // coinData.getExchangeRate();
+      // btcPriceUSD = btcCoinData
+    });
+  }
 
   // Create DropdownButton (Android) with dropdownItems via coin_data currency list
   DropdownButton<String> androidDropdown() {
@@ -28,11 +48,11 @@ class _PriceScreenState extends State<PriceScreen> {
 
     return DropdownButton<String>(
       value: selectedCurrency,
-      onChanged: (value) {
-        setState(() {
-          selectedCurrency = value.toString();
-          print(value);
-        });
+      onChanged: (value) async {
+        selectedCurrency = value.toString();
+        var coinData = await coinModel.getExchangeRate('BTC', selectedCurrency);
+        updateUI(coinData);
+        print(selectedCurrency);
       },
       items: dropdownItems,
     );
@@ -49,8 +69,11 @@ class _PriceScreenState extends State<PriceScreen> {
     return CupertinoPicker(
       backgroundColor: Colors.lightBlueAccent,
       itemExtent: 32.0, // height of each item (in px)
-      onSelectedItemChanged: (selectedIndex) {
-        print(selectedIndex);
+      onSelectedItemChanged: (selectedIndex) async {
+        selectedCurrency = currenciesList[selectedIndex];
+        var coinData = await coinModel.getExchangeRate('BTC', selectedCurrency);
+        updateUI(coinData);
+        print(selectedCurrency);
       },
       children: pickerItems,
     );
@@ -77,7 +100,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ? USD',
+                  '1 BTC = $btcPriceUSD $selectedCurrency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
